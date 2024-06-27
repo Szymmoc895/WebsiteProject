@@ -89,16 +89,46 @@
             color: #4A90E2;
             text-decoration: none;
         }
+        .alert {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .alert-success {
+            background-color: #5cb85c; /* Zielony */
+            color: #fff;
+        }
+        .alert-error {
+            background-color: #d9534f; /* Czerwony */
+            color: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Logowanie</h2>
+
+        <!-- Wyświetlanie Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formularz logowania -->
         <form action="/login" method="POST">
             <input type="text" name="username" placeholder="Nazwa użytkownika" required>
             <input type="password" name="password" placeholder="Hasło" required>
             <button type="submit">Zaloguj się</button>
         </form>
+
+        <!-- Przekierowanie do strony rejestracji -->
         <a href="/register" class="register-link">Nie masz konta? Zarejestruj się</a>
     </div>
 </body>
