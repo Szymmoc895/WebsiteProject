@@ -1,32 +1,3 @@
-<!-- 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home</title>
-    <style>
-      h1 {
-        color: green;
-      }
-    </style>
-  </head>
-  <body>
-    <nav>
-      <ul>
-        <li><a href="/login">Login</a></li>
-        <li><a href="/register">Create account</a></li>
-      </ul>
-    </nav>
-    {% if current_user.is_authenticated %}
-    <h1>You are logged in</h1>
-    <a href="/logout">Logout</a>
-    {% else %}
-    <h1>You are not logged in</h1>
-    {% endif %}
-  </body>
-</html> -->
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -44,11 +15,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
         }
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
         header h1 {
             margin: 0;
@@ -68,17 +39,27 @@
             cursor: pointer;
             border-radius: 5px;
             font-size: 14px;
-            background-color: #333;
-            color: white;
             transition: background-color 0.3s ease;
         }
-        nav button:hover {
+        nav .login-btn, nav .register-btn, nav .logout-btn {
+            background-color: #333;
+            color: white;
+        }
+        nav .login-btn:hover, nav .register-btn:hover, nav .logout-btn:hover {
             background-color: #555;
+        }
+        nav .generate-btn {
+            background-color: #007BFF;
+            color: white;
+        }
+        nav .generate-btn:hover {
+            background-color: #0056b3;
         }
         section {
             text-align: center;
+            margin-bottom: 20px;
         }
-        section button {
+        section button, section select {
             padding: 15px 30px;
             margin: 10px;
             border: none;
@@ -90,7 +71,11 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
             transition: background-color 0.3s ease, color 0.3s ease;
         }
-        section button:hover {
+        section button:disabled, section select:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        section button:hover:enabled, section select:hover:enabled {
             background-color: #555;
             color: #fff;
         }
@@ -104,65 +89,79 @@
         .plot-container {
             display: none;
             margin-top: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .active {
+            display: block;
+        }
+        .plot {
+            margin-bottom: 20px;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Analiza danych o egzaminie maturalnym w poszczególnych województwach</h1>
-    </header>
-    <nav>
-        {% if current_user.is_authenticated %}
-            <span>Witaj, {{ current_user.username }}!</span>
-            <button class="logout-btn" onclick="window.location.href='/logout'">Wyloguj się</button>
-        {% else %}
-            <button class="login-btn" onclick="window.location.href='/login'">Zaloguj się</button>
-            <button class="register-btn" onclick="window.location.href='/register'">Zarejestruj się</button>
-        {% endif %}
-    </nav>
-    <section>
-        <button onclick="openTab('tab1')">Województwo 1</button>
-        <button onclick="openTab('tab2')">Województwo 2</button>
-        <button onclick="openTab('tab3')">Województwo 3</button>
-        <!-- Add more buttons for additional regions -->
-    </section>
-    <section>
-        <div id="tab1" class="tab">
-            <h2>Województwo 1</h2>
-            <button onclick="generatePlot('plot1')">Pokaż wykres</button>
-            <div class="plot-container" id="plot1">
-                <img src="{{ url_for('generate_plot') }}" alt="Wykres">
-            </div>
-        </div>
-        <div id="tab2" class="tab">
-            <h2>Województwo 2</h2>
-            <button onclick="generatePlot('plot2')">Pokaż wykres</button>
-            <div class="plot-container" id="plot2">
-                <img src="{{ url_for('generate_plot') }}" alt="Wykres">
-            </div>
-        </div>
-        <div id="tab3" class="tab">
-            <h2>Województwo 3</h2>
-            <button onclick="generatePlot('plot3')">Pokaż wykres</button>
-            <div class="plot-container" id="plot3">
-                <img src="{{ url_for('generate_plot') }}" alt="Wykres">
-            </div>
-        </div>
-        <!-- Add more sections for additional regions -->
-    </section>
-
+    <div class="content-wrapper">
+        <header>
+            <h1>Analiza danych o egzaminie maturalnym w poszczególnych województwach</h1>
+        </header>
+        <nav>
+            {% if current_user.is_authenticated %}
+                <span>Witaj, {{ current_user.username }}!</span>
+                <button class="logout-btn" onclick="window.location.href='/logout'">Wyloguj się</button>
+                <form action="/generate_plots" method="post">
+                    <button type="submit" class="generate-btn">Wygeneruj wykresy</button>
+                </form>  
+            {% else %}
+                <button class="login-btn" onclick="window.location.href='/login'">Zaloguj się</button>
+                <button class="register-btn" onclick="window.location.href='/register'">Zarejestruj się</button>
+                <button class="generate-btn" disabled>Wygeneruj wykresy</button> 
+            {% endif %}
+        </nav>
+        <section>
+            <select id="wojewodztwa-select" {% if not current_user.is_authenticated %}disabled{% endif %}>
+                <option value="" selected disabled>Wybierz województwo</option>
+                {% for wojewodztwo in wojewodztwa %}
+                    <option value="{{ wojewodztwo }}">Województwo {{ wojewodztwo }}</option>
+                {% endfor %}
+            </select>
+            <button id="generate-btn" onclick="generateSelectedPlots()" {% if not current_user.is_authenticated %}disabled{% endif %}>Generuj</button>
+        </section>
+        <section id="plots-section" class="plots-row">
+            {% for wojewodztwo in wojewodztwa %}
+                <div id="plot-{{ wojewodztwo }}-1" class="plot-container plot">
+                    <img src="{{ url_for('plot', wojewodztwo=wojewodztwo, plot_number=1) }}" alt="Wykres 1 województwa {{ wojewodztwo }}">
+                </div>
+                <div id="plot-{{ wojewodztwo }}-2" class="plot-container plot">
+                    <img src="{{ url_for('plot2', wojewodztwo=wojewodztwo) }}" alt="Wykres 2 województwa {{ wojewodztwo }}">
+                </div>
+                <div id="plot-{{ wojewodztwo }}-3" class="plot-container plot">
+                    <img src="{{ url_for('plot3', wojewodztwo=wojewodztwo) }}" alt="Wykres 3 województwa {{ wojewodztwo }}">
+                </div>
+            {% endfor %}
+        </section>
+    </div>
     <script>
-        function openTab(tabId) {
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.style.display = 'none';
-            });
-            document.getElementById(tabId).style.display = 'block';
+        function generateSelectedPlots() {
+            hideAllPlots();
+            const selectedWojewodztwo = document.getElementById('wojewodztwa-select').value;
+            if (selectedWojewodztwo) {
+                document.getElementById(`plot-${selectedWojewodztwo}-1`).classList.add('active');
+                document.getElementById(`plot-${selectedWojewodztwo}-2`).classList.add('active');
+                document.getElementById(`plot-${selectedWojewodztwo}-3`).classList.add('active');
+            }
         }
 
-        function generatePlot(plotId) {
-            const plotContainer = document.getElementById(plotId);
-            plotContainer.style.display = 'block';
+        function hideAllPlots() {
+            document.querySelectorAll('.plot-container').forEach(el => el.classList.remove('active'));
         }
     </script>
 </body>
